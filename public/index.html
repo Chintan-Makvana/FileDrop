@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📦 FileDrop - Modern Secure File Storage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <video autoplay loop muted playsinline id="bg-video">
+    <source src="video1.mp4" type="video/mp4">
+  </video>
+
+  <!-- Animated Ambient Lighting Orbs -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen" class="auth-wrap">
+    <div class="auth-card">
+      <h1 class="logo">📦 FileDrop</h1>
+      </br>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="login">Log In</button>
+        <button class="tab-btn" data-tab="register">Sign Up</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <input type="email" id="login-email" placeholder="Email" required />
+        <input type="password" id="login-password" placeholder="Password" required />
+        <button type="submit">Log In</button>
+      </form>
+
+      <form id="register-form" class="auth-form hidden">
+        <input type="text" id="register-username" placeholder="Username (e.g. alex)" minlength="2" maxlength="30"
+          required />
+        <input type="email" id="register-email" placeholder="Email" required />
+        <input type="password" id="register-password" placeholder="Password (min 6 characters)" required />
+        <button type="submit">Create Account</button>
+      </form>
+
+      <p id="auth-error" class="error-msg hidden"></p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="dashboard hidden">
+    <header class="topbar">
+      <div class="brand-group">
+        <h1 class="logo">📦 FileDrop</h1>
+        <span id="admin-badge" class="admin-badge hidden">👑 Admin</span>
+      </div>
+      <div class="user-info">
+        <button id="manage-users-btn" class="admin-topbar-btn hidden" title="Manage User Accounts">👥 Users</button>
+        <button id="profile-btn" class="profile-pill-btn" title="View & Edit Profile">
+          <div class="user-avatar" id="user-avatar-container">
+            <span id="user-avatar-initial">U</span>
+          </div>
+          <span id="user-display-name">Username</span>
+        </button>
+        <button id="logout-btn" class="ghost-btn">Log Out</button>
+      </div>
+    </header>
+
+    <main class="main split-layout">
+      <!-- LEFT SIDE: Upload Column -->
+      <section class="upload-column">
+        <div class="column-header">
+          <h2>Upload Files</h2>
+        </div>
+
+        <div id="dropzone" class="dropzone">
+          <input type="file" id="file-input" multiple hidden />
+          <div class="dropzone-ambient-pulse"></div>
+          <div class="dropzone-laser-border"></div>
+          <div class="dropzone-content">
+            <div class="dropzone-icon-wrap">
+              <span class="dropzone-icon">⬆️</span>
+              <div class="icon-pulse-ring"></div>
+            </div>
+            <p><strong>Drag & drop files here</strong></p>
+            <p class="browse-hint">or <span class="browse-btn-text">browse files</span></p>
+            <p class="hint">Instant encrypted upload to your account.</p>
+          </div>
+        </div>
+
+        <div id="upload-progress" class="upload-progress hidden">
+          <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <span id="progress-label">Uploading…</span>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDE: All Available Files & Search Column -->
+      <section class="files-column file-section">
+        <div class="file-section-header">
+          <div class="header-left">
+            <h2 id="files-heading">Your Files</h2>
+            <!-- Admin View Switcher -->
+            <div id="admin-view-controls" class="admin-view-controls hidden">
+              <button class="filter-tab active" data-view="all">🌐 All System Files (<span
+                  id="admin-total-files-count">0</span>)</button>
+              <button class="filter-tab" data-view="mine">📁 My Uploads</button>
+            </div>
+          </div>
+
+          <!-- Compact Animated Search Bar -->
+          <div class="file-search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="file-search-input" placeholder="Search files..." autocomplete="off" />
+            <button type="button" id="clear-search-btn" class="clear-search-btn hidden" title="Clear search">✕</button>
+          </div>
+        </div>
+
+        <div id="file-list" class="file-list"></div>
+        <p id="empty-state" class="empty-state hidden">No files yet — upload your first file above.</p>
+        <p id="search-empty-state" class="empty-state hidden">No files match your search.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- PROFILE MODAL -->
+  <div id="profile-modal" class="modal hidden">
+    <div class="modal-card profile-card">
+      <div class="modal-header">
+        <h3>User Profile</h3>
+        <button type="button" id="close-profile-x-btn" class="close-x-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="profile-hero">
+        <div class="avatar-edit-wrapper">
+          <div class="profile-avatar-large" id="modal-avatar-container">
+            <span id="modal-avatar-initial">U</span>
+          </div>
+          <button type="button" id="avatar-camera-btn" class="avatar-camera-btn" title="Change Photo">📷</button>
+          <input type="file" id="avatar-file-input" accept="image/*" hidden />
+        </div>
+        <div class="profile-hero-text">
+          <div class="hero-name-row">
+            <h4 id="modal-profile-username-heading">Username</h4>
+            <span id="modal-role-badge" class="role-pill">User</span>
+          </div>
+          <p class="hint" id="modal-profile-email">user@example.com</p>
+        </div>
+      </div>
+
+      <!-- Avatar Photo Actions -->
+      <div class="avatar-actions-bar">
+        <button type="button" id="upload-avatar-btn" class="mini-btn">📷 Upload Photo</button>
+        <button type="button" id="preset-avatar-btn" class="mini-btn">🎨 Choose Avatar</button>
+        <button type="button" id="remove-avatar-btn" class="mini-btn danger-text">Remove Photo</button>
+      </div>
+
+      <!-- Preset Avatars Selector (Expandable) -->
+      <div id="preset-avatar-drawer" class="preset-avatar-drawer hidden">
+        <p class="drawer-title">Select an avatar emoji:</p>
+        <div class="avatar-presets-grid">
+          <button type="button" class="preset-choice" data-preset="👑">👑</button>
+          <button type="button" class="preset-choice" data-preset="🚀">🚀</button>
+          <button type="button" class="preset-choice" data-preset="⚡">⚡</button>
+          <button type="button" class="preset-choice" data-preset="🦊">🦊</button>
+          <button type="button" class="preset-choice" data-preset="🐱">🐱</button>
+          <button type="button" class="preset-choice" data-preset="🤖">🤖</button>
+          <button type="button" class="preset-choice" data-preset="💎">💎</button>
+          <button type="button" class="preset-choice" data-preset="🎨">🎨</button>
+          <button type="button" class="preset-choice" data-preset="🌟">🌟</button>
+          <button type="button" class="preset-choice" data-preset="🛡️">🛡️</button>
+          <button type="button" class="preset-choice" data-preset="🦁">🦁</button>
+          <button type="button" class="preset-choice" data-preset="🧙‍♂️">🧙‍♂️</button>
+        </div>
+      </div>
+
+      <form id="profile-form" class="profile-form">
+        <div class="form-group">
+          <label for="profile-username-input">Edit Username</label>
+          <input type="text" id="profile-username-input" minlength="2" maxlength="30" placeholder="Enter new username"
+            required />
+        </div>
+
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="profile-email-input" readonly disabled />
+        </div>
+
+        <div class="profile-stats-grid">
+          <div class="stat-card">
+            <span class="stat-number" id="stat-file-count">0</span>
+            <span class="stat-title">Files</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number" id="stat-storage-used">0 B</span>
+            <span class="stat-title">Storage</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number" id="stat-member-since">-</span>
+            <span class="stat-title">Joined</span>
+          </div>
+        </div>
+
+        <p id="profile-msg" class="profile-msg hidden"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="close-profile-modal-btn" class="ghost-btn">Cancel</button>
+          <button type="submit" id="save-profile-btn" class="primary-action-btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN USERS MANAGEMENT MODAL -->
+  <div id="admin-users-modal" class="modal hidden">
+    <div class="modal-card users-card">
+      <div class="modal-header">
+        <div>
+          <h3>👥 Registered User Accounts</h3>
+          <p class="hint">Manage platform accounts, reset passwords, or delete users.</p>
+        </div>
+        <button type="button" id="close-users-x-btn" class="close-x-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <div id="users-loading-state" class="users-loading-state hidden">Loading users…</div>
+      <div id="admin-users-list" class="admin-users-list"></div>
+
+      <div class="modal-actions">
+        <button type="button" id="close-users-modal-btn" class="ghost-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN RESET PASSWORD MODAL -->
+  <div id="admin-reset-modal" class="modal hidden">
+    <div class="modal-card reset-pwd-card">
+      <div class="modal-header">
+        <h3>🔑 Reset User Password</h3>
+        <button type="button" id="close-reset-x-btn" class="close-x-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="target-user-info">
+        <p>Resetting password for: <strong id="reset-user-target-email">user@email.com</strong></p>
+      </div>
+
+      <form id="admin-reset-pwd-form" class="profile-form">
+        <div class="form-group">
+          <label for="admin-new-password-input">New Password (min 6 characters)</label>
+          <input type="password" id="admin-new-password-input" minlength="6" placeholder="Enter new strong password"
+            required />
+        </div>
+
+        <p id="admin-reset-msg" class="profile-msg hidden"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="close-reset-modal-btn" class="ghost-btn">Cancel</button>
+          <button type="submit" id="submit-reset-pwd-btn" class="primary-action-btn">Set New Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SHARE MODAL -->
+  <div id="share-modal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Share Link</h3>
+      <p class="hint">Anyone with this link can download the file — no login required.</p>
+      <div class="share-link-row">
+        <input type="text" id="share-link-input" readonly />
+        <button id="copy-link-btn">Copy</button>
+      </div>
+      <div class="modal-actions">
+        <button id="revoke-link-btn" class="danger-btn">Revoke Link</button>
+        <button id="close-modal-btn" class="ghost-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
