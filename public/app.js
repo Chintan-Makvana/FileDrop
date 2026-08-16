@@ -962,5 +962,78 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ---------- Google Sign-In Integration ----------
+let googleClientId = null;
+
+async function initGoogleAuth() {
+  try {
+    const res = await fetch(API + '/auth/google/config');
+    const data = await res.json();
+    googleClientId = data.clientId;
+
+    const btnSlot = document.getElementById('google-signin-btn');
+    const fallbackBtn = document.getElementById('google-fallback-btn');
+
+    if (googleClientId && window.google && window.google.accounts && window.google.accounts.id) {
+      if (fallbackBtn) fallbackBtn.classList.add('hidden');
+      if (btnSlot) btnSlot.classList.remove('hidden');
+
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: handleGoogleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+
+      if (btnSlot) {
+        btnSlot.innerHTML = '';
+        window.google.accounts.id.renderButton(btnSlot, {
+          theme: 'filled_black',
+          size: 'large',
+          shape: 'pill',
+          width: 320,
+          text: 'continue_with',
+          logo_alignment: 'left',
+        });
+      }
+    } else {
+      // Show styled custom button
+      if (btnSlot) btnSlot.classList.add('hidden');
+      if (fallbackBtn) {
+        fallbackBtn.classList.remove('hidden');
+        fallbackBtn.onclick = () => {
+          if (!googleClientId) {
+            showError('Google Sign-In is configured! Please add GOOGLE_CLIENT_ID to your .env or Render/Railway settings to enable one-click login.');
+          } else if (window.google && window.google.accounts && window.google.accounts.id) {
+            window.google.accounts.id.prompt();
+          }
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Could not initialize Google Auth:', err);
+  }
+}
+
+async function handleGoogleCredentialResponse(response) {
+  if (!response || !response.credential) {
+    showError('Google authentication failed. Please try again.');
+    return;
+  }
+  showToast('Signing in with Google...', 'info');
+  await authRequest('/auth/google', { credential: response.credential });
+}
+
+// Retry Google init if SDK loaded after app script
+window.addEventListener('load', () => {
+  initGoogleAuth();
+  // Double check after 1s in case Google script loaded slowly
+  setTimeout(initGoogleAuth, 1000);
+});
+
 // ---------- Init ----------
-if (token) enterDashboard();
+if (token) {
+  enterDashboard();
+} else {
+  initGoogleAuth();
+}

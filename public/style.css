@@ -369,6 +369,75 @@ h1, h2, h3, h4, .logo, .tab-btn, .primary-action-btn, .admin-badge, .filter-tab,
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
+/* Auth Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0 16px;
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+}
+
+.auth-divider span {
+  padding: 0 12px;
+}
+
+/* Google Sign-In Section */
+.google-auth-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+}
+
+.google-btn-slot {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.google-fallback-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-full);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.google-fallback-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(66, 133, 244, 0.3);
+}
+
+.google-svg-icon {
+  flex-shrink: 0;
+}
+
 /* ---------- DASHBOARD (RED-BLACK THEME) ---------- */
 .dashboard {
   min-height: 100vh;

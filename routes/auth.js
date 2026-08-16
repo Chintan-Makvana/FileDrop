@@ -5,11 +5,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { OAuth2Client } = require('google-auth-library');
 const db = require('../db');
 const requireAuth = require('../middleware/auth');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 const AVATAR_DIR = path.join(__dirname, '..', 'uploads', 'avatars');
 if (!fs.existsSync(AVATAR_DIR)) fs.mkdirSync(AVATAR_DIR, { recursive: true });
@@ -143,6 +146,12 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
+  if (!user.passwordHash) {
+    return res.status(401).json({
+      error: 'This account was created with Google Sign-In. Please click "Continue with Google" to log in.',
+    });
+  }
+
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) {
     return res.status(401).json({ error: 'Invalid email or password' });
@@ -158,6 +167,119 @@ router.post('/login', async (req, res) => {
     { expiresIn: '30d' }
   );
   res.json({ token, email: user.email, username, role, avatar });
+});
+
+// GET Google Auth config (Client ID for frontend)
+router.get('/google/config', (req, res) => {
+  res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
+});
+
+// POST Google Sign-In / Sign-Up
+router.post('/google', async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) {
+    return res.status(400).json({ error: 'Google credential token is required' });
+  }
+
+  try {
+    let payload = null;
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+
+    if (clientId) {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: clientId,
+      });
+      payload = ticket.getPayload();
+    } else {
+      // Fallback: verify via Google's tokeninfo API if client ID is dynamically resolved
+      const https = require('https');
+      payload = await new Promise((resolve, reject) => {
+        https.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`, (res) => {
+          let raw = '';
+          res.on('data', (chunk) => (raw += chunk));
+          res.on('end', () => {
+            try {
+              const data = JSON.parse(raw);
+              if (data.error || data.error_description) {
+                reject(new Error(data.error_description || data.error));
+              } else {
+                resolve(data);
+              }
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }).on('error', reject);
+      });
+    }
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: 'Could not verify Google account email' });
+    }
+
+    const email = payload.email.toLowerCase();
+    const name = payload.name || payload.given_name || email.split('@')[0];
+    const avatar = payload.picture || null;
+    const googleId = payload.sub;
+
+    const users = db.getUsers();
+    let user = users.find((u) => u.email.toLowerCase() === email);
+
+    if (!user) {
+      // Auto-create brand new verified Google user
+      user = {
+        id: uuidv4(),
+        email,
+        username: sanitizeUsername(name, email),
+        role: email === 'admin@filedrop.com' ? 'admin' : 'user',
+        avatar,
+        googleId,
+        authProvider: 'google',
+        passwordHash: null,
+        createdAt: new Date().toISOString(),
+      };
+      users.push(user);
+      db.saveUsers(users);
+    } else {
+      // User exists: update googleId and avatar if missing
+      let changed = false;
+      if (!user.googleId) {
+        user.googleId = googleId;
+        changed = true;
+      }
+      if (!user.avatar && avatar) {
+        user.avatar = avatar;
+        changed = true;
+      }
+      if (changed) {
+        db.saveUsers(users);
+      }
+    }
+
+    const username = user.username || user.email.split('@')[0];
+    const role = user.role || (user.email === 'admin@filedrop.com' ? 'admin' : 'user');
+    const finalAvatar = user.avatar || null;
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role, username },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      email: user.email,
+      username,
+      role,
+      avatar: finalAvatar,
+    });
+  } catch (err) {
+    console.error('Google Auth Error:', err);
+    return res.status(401).json({
+      error: 'Google authentication failed: ' + (err.message || 'Invalid token'),
+    });
+  }
 });
 
 // GET profile
