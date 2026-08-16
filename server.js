@@ -30,6 +30,6 @@ app.get('/s/:token', (req, res) => {
   res.download(path.join(UPLOAD_DIR, file.storedName), file.originalName);
 });
 
-app.listen(PORT, () => {
-  console.log(`FileDrop server running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`FileDrop server running at http://0.0.0.0:${PORT}`);
 });
