@@ -80,7 +80,31 @@
         <h1 class="logo">📦 FileDrop</h1>
         <span id="admin-badge" class="admin-badge hidden">👑 Admin</span>
       </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-pills" id="main-nav-tabs">
+        <button type="button" class="nav-tab active" data-nav="local">
+          <span class="nav-tab-icon">📁</span>
+          <span>My Drive</span>
+        </button>
+        <button type="button" class="nav-tab" data-nav="vault">
+          <span class="nav-tab-icon">🛡️</span>
+          <span>Friend Vaults</span>
+          <span id="vault-alert-badge" class="pill-badge alert-badge hidden">0</span>
+        </button>
+        <button type="button" class="nav-tab" data-nav="friends">
+          <span class="nav-tab-icon">🤝</span>
+          <span>Friends & Hosting</span>
+          <span id="friend-requests-badge" class="pill-badge info-badge hidden">0</span>
+        </button>
+      </nav>
+
       <div class="user-info">
+        <button id="device-btn" class="device-pill-btn" title="Storage Vault Device Binding">
+          <span class="device-indicator-dot" id="device-indicator-dot"></span>
+          <span class="device-icon">💻</span>
+          <span id="device-display-name">My Device</span>
+        </button>
         <button id="manage-users-btn" class="admin-topbar-btn hidden" title="Manage User Accounts">👥 Users</button>
         <button id="profile-btn" class="profile-pill-btn" title="View & Edit Profile">
           <div class="user-avatar" id="user-avatar-container">
@@ -92,62 +116,440 @@
       </div>
     </header>
 
-    <main class="main split-layout">
-      <!-- LEFT SIDE: Upload Column -->
-      <section class="upload-column">
-        <div class="column-header">
-          <h2>Upload Files</h2>
-        </div>
+    <!-- Urgent Eviction Alert Banner Container (Global on dashboard) -->
+    <div id="global-eviction-banner" class="global-eviction-banner hidden"></div>
 
-        <div id="dropzone" class="dropzone">
-          <input type="file" id="file-input" multiple hidden />
-          <div class="dropzone-ambient-pulse"></div>
-          <div class="dropzone-laser-border"></div>
-          <div class="dropzone-content">
-            <div class="dropzone-icon-wrap">
-              <span class="dropzone-icon">⬆️</span>
-              <div class="icon-pulse-ring"></div>
-            </div>
-            <p><strong>Drag & drop files here</strong></p>
-            <p class="browse-hint">or <span class="browse-btn-text">browse files</span></p>
-            <p class="hint">Instant encrypted upload to your account.</p>
+    <!-- PANEL 1: LOCAL DRIVE -->
+    <div id="view-local" class="view-panel active">
+      <main class="main split-layout">
+        <!-- LEFT SIDE: Upload Column -->
+        <section class="upload-column">
+          <div class="column-header">
+            <h2>Upload Files</h2>
           </div>
-        </div>
 
-        <div id="upload-progress" class="upload-progress hidden">
-          <div class="progress-bar">
-            <div id="progress-fill" class="progress-fill"></div>
-          </div>
-          <span id="progress-label">Uploading…</span>
-        </div>
-      </section>
-
-      <!-- RIGHT SIDE: All Available Files & Search Column -->
-      <section class="files-column file-section">
-        <div class="file-section-header">
-          <div class="header-left">
-            <h2 id="files-heading">Your Files</h2>
-            <!-- Admin View Switcher -->
-            <div id="admin-view-controls" class="admin-view-controls hidden">
-              <button class="filter-tab active" data-view="all">🌐 All System Files (<span
-                  id="admin-total-files-count">0</span>)</button>
-              <button class="filter-tab" data-view="mine">📁 My Uploads</button>
+          <div id="dropzone" class="dropzone">
+            <input type="file" id="file-input" multiple hidden />
+            <div class="dropzone-ambient-pulse"></div>
+            <div class="dropzone-laser-border"></div>
+            <div class="dropzone-content">
+              <div class="dropzone-icon-wrap">
+                <span class="dropzone-icon">⬆️</span>
+                <div class="icon-pulse-ring"></div>
+              </div>
+              <p><strong>Drag & drop files here</strong></p>
+              <p class="browse-hint">or <span class="browse-btn-text">browse files</span></p>
+              <p class="hint">Instant upload to your server account.</p>
             </div>
           </div>
 
-          <!-- Compact Animated Search Bar -->
-          <div class="file-search-bar">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="file-search-input" placeholder="Search files..." autocomplete="off" />
-            <button type="button" id="clear-search-btn" class="clear-search-btn hidden" title="Clear search">✕</button>
+          <div id="upload-progress" class="upload-progress hidden">
+            <div class="progress-bar">
+              <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <span id="progress-label">Uploading…</span>
+          </div>
+        </section>
+
+        <!-- RIGHT SIDE: Files Column -->
+        <section class="files-column file-section">
+          <div class="file-section-header">
+            <div class="header-left">
+              <h2 id="files-heading">Your Files</h2>
+              <!-- Admin View Switcher -->
+              <div id="admin-view-controls" class="admin-view-controls hidden">
+                <button class="filter-tab active" data-view="all">🌐 All System Files (<span id="admin-total-files-count">0</span>)</button>
+                <button class="filter-tab" data-view="mine">📁 My Uploads</button>
+              </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="file-search-bar">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="file-search-input" placeholder="Search files..." autocomplete="off" />
+              <button type="button" id="clear-search-btn" class="clear-search-btn hidden" title="Clear search">✕</button>
+            </div>
+          </div>
+
+          <div id="file-list" class="file-list"></div>
+          <p id="empty-state" class="empty-state hidden">No files yet — upload your first file above.</p>
+          <p id="search-empty-state" class="empty-state hidden">No files match your search.</p>
+        </section>
+      </main>
+    </div>
+
+    <!-- PANEL 2: FRIEND VAULT (ZERO-KNOWLEDGE REMOTE STORAGE) -->
+    <div id="view-vault" class="view-panel hidden">
+      <!-- Device Blocked Notice Banner (shown if logged in from an unauthorized device) -->
+      <div id="vault-device-blocked-banner" class="device-restriction-banner hidden">
+        <div class="restriction-icon">🔒</div>
+        <div class="restriction-content">
+          <h4>Device Access Restriction</h4>
+          <p>This account's Friend Vault is bound to <strong><span id="blocked-linked-device-name">Primary Device</span></strong>. Friend files can only be hosted, managed, and uploaded from your authorized device.</p>
+        </div>
+        <button type="button" id="open-transfer-device-btn" class="primary-action-btn">🔄 Transfer Vault to This Device</button>
+      </div>
+
+      <main class="main split-layout" id="vault-main-layout">
+        <!-- LEFT SIDE: Encrypted Vault Deposit Column -->
+        <section class="upload-column vault-deposit-column">
+          <div class="column-header">
+            <h2>🛡️ Store on Friend's Device</h2>
+            <p class="section-subtext">Zero-Knowledge AES-256 client-side encryption</p>
+          </div>
+
+          <div class="vault-controls-card">
+            <!-- Friend Host Selector -->
+            <div class="form-group">
+              <div class="label-with-action">
+                <label for="vault-friend-select">Select Friend Host:</label>
+                <button type="button" id="quick-connect-friend-btn" class="text-action-link">+ Connect Friend</button>
+              </div>
+              <select id="vault-friend-select" class="custom-select">
+                <option value="" disabled selected>Loading connected friends…</option>
+              </select>
+              <span id="vault-host-quota-hint" class="hint quota-hint">Quota available: --</span>
+            </div>
+
+            <!-- Vault Passphrase Key -->
+            <div class="form-group">
+              <label for="vault-passphrase-input">Vault Passphrase / Key:</label>
+              <div class="password-input-wrap">
+                <input type="password" id="vault-passphrase-input" placeholder="Enter passphrase to encrypt" minlength="4" />
+                <button type="button" id="toggle-vault-pwd-btn" class="icon-toggle-btn" title="Toggle visibility">👁️</button>
+              </div>
+              <p class="hint">Your friend CANNOT read or open your file without this key.</p>
+            </div>
+
+            <div class="zk-security-badge">
+              <span class="zk-icon">🔒</span>
+              <div class="zk-text">
+                <strong>Zero-Knowledge Guarantee:</strong>
+                <span>Scrambled into ciphertext before leaving your device. Stored as an unreadable blob on your friend's hard drive.</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="vault-dropzone" class="dropzone vault-dropzone">
+            <input type="file" id="vault-file-input" hidden />
+            <div class="dropzone-ambient-pulse vault-glow"></div>
+            <div class="dropzone-laser-border"></div>
+            <div class="dropzone-content">
+              <div class="dropzone-icon-wrap">
+                <span class="dropzone-icon">🛡️</span>
+                <div class="icon-pulse-ring"></div>
+              </div>
+              <p><strong>Drag & drop file to encrypt & deposit</strong></p>
+              <p class="browse-hint">or <span class="browse-btn-text">browse to encrypt</span></p>
+              <p class="hint">Instant AES-256 client encryption & remote deposit</p>
+            </div>
+          </div>
+
+          <div id="vault-upload-progress" class="upload-progress hidden">
+            <div class="progress-bar">
+              <div id="vault-progress-fill" class="progress-fill vault-progress"></div>
+            </div>
+            <span id="vault-progress-label">🔒 Encrypting with AES-256…</span>
+          </div>
+        </section>
+
+        <!-- RIGHT SIDE: My Remote Vault Files -->
+        <section class="files-column file-section">
+          <div class="file-section-header">
+            <div class="header-left">
+              <h2>My Files Stored on Friends</h2>
+              <span id="vault-files-count-badge" class="count-pill">0 files</span>
+            </div>
+
+            <div class="file-search-bar">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="vault-search-input" placeholder="Search my remote files..." autocomplete="off" />
+            </div>
+          </div>
+
+          <!-- Pending Eviction Notice Warnings Inside Vault View -->
+          <div id="vault-eviction-notices-container" class="eviction-notices-container"></div>
+
+          <div id="vault-file-list" class="file-list vault-file-list"></div>
+          <p id="vault-empty-state" class="empty-state hidden">No files stored on friends yet. Choose a friend and upload securely on the left.</p>
+          <p id="vault-search-empty-state" class="empty-state hidden">No remote files match your search.</p>
+        </section>
+      </main>
+    </div>
+
+    <!-- PANEL 3: FRIENDS & HOSTING MANAGEMENT -->
+    <div id="view-friends" class="view-panel hidden">
+      <div class="friends-dashboard-container">
+        <!-- TOP ROW: Stats & Connect Friend Banner -->
+        <div class="friends-hero-grid">
+          <!-- Friend Code Card -->
+          <div class="hero-card friend-code-card">
+            <div class="card-icon-wrap">🤝</div>
+            <div class="card-info">
+              <h3>Your Friend Code</h3>
+              <p class="hint">Share this code with friends so they can connect with you:</p>
+              <div class="friend-code-display-wrap">
+                <span id="my-friend-code-val" class="friend-code-value">FD-XXXXXX</span>
+                <button type="button" id="copy-friend-code-btn" class="mini-btn">📋 Copy</button>
+              </div>
+            </div>
+            <button type="button" id="open-add-friend-btn" class="primary-action-btn">+ Connect New Friend</button>
+          </div>
+
+          <!-- Storage Given Stats -->
+          <div class="hero-card storage-stat-card">
+            <div class="card-icon-wrap">💾</div>
+            <div class="card-info">
+              <h3>Storage You Host For Friends</h3>
+              <div class="quota-meter-wrap">
+                <div class="quota-progress-track">
+                  <div id="hosted-storage-fill" class="quota-progress-fill" style="width: 0%"></div>
+                </div>
+                <span id="hosted-storage-label" class="quota-metric">0 B / 0 GB</span>
+              </div>
+              <p class="hint">Disk space allocated across connected friends.</p>
+            </div>
+          </div>
+
+          <!-- Storage Used On Friends Stats -->
+          <div class="hero-card storage-stat-card">
+            <div class="card-icon-wrap">☁️</div>
+            <div class="card-info">
+              <h3>Storage Friends Shared With You</h3>
+              <div class="quota-meter-wrap">
+                <div class="quota-progress-track">
+                  <div id="remote-storage-fill" class="quota-progress-fill" style="width: 0%"></div>
+                </div>
+                <span id="remote-storage-label" class="quota-metric">0 B / 0 GB</span>
+              </div>
+              <p class="hint">Remote storage available to backup your files.</p>
+            </div>
           </div>
         </div>
 
-        <div id="file-list" class="file-list"></div>
-        <p id="empty-state" class="empty-state hidden">No files yet — upload your first file above.</p>
-        <p id="search-empty-state" class="empty-state hidden">No files match your search.</p>
-      </section>
-    </main>
+        <!-- Incoming Friend Requests Banner (if any) -->
+        <div id="incoming-requests-section" class="requests-card hidden">
+          <h4>📬 Pending Friend Requests (<span id="incoming-req-count">0</span>)</h4>
+          <div id="incoming-requests-list" class="incoming-requests-list"></div>
+        </div>
+
+        <!-- TWO MAIN GRIDS: Friends List + Files I Am Hosting -->
+        <div class="friends-main-split">
+          <!-- Left: Connected Friends & Quota Controls -->
+          <section class="section-card">
+            <div class="section-card-header">
+              <h3>Connected Friends & Quotas</h3>
+              <span id="friends-count-pill" class="count-pill">0 Friends</span>
+            </div>
+            <div id="friends-list-container" class="friends-grid"></div>
+            <p id="friends-empty-state" class="empty-state hidden">You haven't connected with any friends yet. Click "+ Connect New Friend" above to get started!</p>
+          </section>
+
+          <!-- Right: Storage I Am Hosting for Friends & Eviction Actions -->
+          <section class="section-card">
+            <div class="section-card-header">
+              <div>
+                <h3>Device Storage Hosted for Friends</h3>
+                <p class="hint">Zero-Knowledge blobs stored on your device. You cannot open or view friend files.</p>
+              </div>
+              <span id="hosted-files-count-pill" class="count-pill">0 Blobs</span>
+            </div>
+            <div id="hosted-files-list-container" class="hosted-blobs-list"></div>
+            <p id="hosted-files-empty-state" class="empty-state hidden">No friend is currently storing files on your device.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD FRIEND MODAL -->
+  <div id="add-friend-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🤝 Connect with a Friend</h3>
+        <button type="button" id="close-add-friend-x-btn" class="close-x-btn">&times;</button>
+      </div>
+      <p class="hint">Enter your friend's <strong>Friend Code</strong> (e.g. FD-8F3A29), <strong>Username</strong>, or <strong>Email</strong>:</p>
+      
+      <form id="add-friend-form" class="profile-form">
+        <div class="form-group">
+          <label for="friend-search-input">Friend Code / Username / Email</label>
+          <input type="text" id="friend-search-input" placeholder="e.g. FD-A1B2C3 or alex@email.com" required />
+        </div>
+        <p id="add-friend-msg" class="profile-msg hidden"></p>
+        <div class="modal-actions">
+          <button type="button" id="close-add-friend-modal-btn" class="ghost-btn">Cancel</button>
+          <button type="submit" id="submit-add-friend-btn" class="primary-action-btn">Send Connection Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MANAGE FRIEND QUOTA MODAL -->
+  <div id="quota-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚙️ Storage Quota & Preferences</h3>
+        <button type="button" id="close-quota-x-btn" class="close-x-btn">&times;</button>
+      </div>
+      <p class="hint">Configure storage sharing for <strong id="quota-target-friend-name">Friend</strong>:</p>
+      
+      <form id="quota-settings-form" class="profile-form">
+        <input type="hidden" id="quota-friendship-id" />
+        <div class="form-group">
+          <label for="quota-gb-input">Storage Quota to Allocate (GB):</label>
+          <input type="number" id="quota-gb-input" min="0.5" max="1000" step="0.5" required />
+          <span class="hint">Maximum device storage this friend can use.</span>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="quota-auto-accept-input" />
+            <span>Automatically accept incoming encrypted files up to quota</span>
+          </label>
+        </div>
+
+        <p id="quota-msg" class="profile-msg hidden"></p>
+        <div class="modal-actions">
+          <button type="button" id="close-quota-modal-btn" class="ghost-btn">Cancel</button>
+          <button type="submit" id="save-quota-btn" class="primary-action-btn">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ISSUE EVICTION / RECLAIM STORAGE MODAL -->
+  <div id="eviction-modal" class="modal hidden">
+    <div class="modal-card eviction-card">
+      <div class="modal-header">
+        <h3>⚠️ Request Space Back (Issue Eviction Notice)</h3>
+        <button type="button" id="close-eviction-x-btn" class="close-x-btn">&times;</button>
+      </div>
+      
+      <p class="eviction-explain">
+        When you request space back, the file owner receives an <strong>urgent warning banner with a live countdown timer</strong> to download or relocate their file before it is permanently removed from your device.
+      </p>
+
+      <form id="eviction-form" class="profile-form">
+        <input type="hidden" id="eviction-target-file-id" />
+        
+        <div class="form-group">
+          <label for="eviction-grace-period-select">Select Grace Period (Removal Countdown):</label>
+          <select id="eviction-grace-period-select" class="custom-select">
+            <option value="7d" selected>7 Days (Standard)</option>
+            <option value="3d">3 Days (Moderate)</option>
+            <option value="24h">24 Hours (Urgent)</option>
+            <option value="2m">⚡ 2 Minutes (Fast Live Demo / Testing)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="eviction-reason-input">Reason (Optional note to owner):</label>
+          <input type="text" id="eviction-reason-input" placeholder="e.g. Running out of hard drive space" maxlength="100" />
+        </div>
+
+        <p id="eviction-msg" class="profile-msg hidden"></p>
+        <div class="modal-actions">
+          <button type="button" id="close-eviction-modal-btn" class="ghost-btn">Cancel</button>
+          <button type="submit" id="confirm-eviction-btn" class="danger-btn">Issue Eviction Notice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DECRYPT PASSPHRASE PROMPT MODAL -->
+  <div id="decrypt-prompt-modal" class="modal hidden">
+    <div class="modal-card decrypt-card">
+      <div class="modal-header">
+        <h3>🔓 Decrypt & Download File</h3>
+        <button type="button" id="close-decrypt-x-btn" class="close-x-btn">&times;</button>
+      </div>
+
+      <p class="hint">This file is encrypted with AES-256. Enter your secret Vault Passphrase to decrypt it locally in your browser:</p>
+
+      <form id="decrypt-prompt-form" class="profile-form">
+        <input type="hidden" id="decrypt-target-file-id" />
+        <div class="form-group">
+          <label for="decrypt-passphrase-input">Vault Passphrase / Key:</label>
+          <div class="password-input-wrap">
+            <input type="password" id="decrypt-passphrase-input" placeholder="Enter your secret key" required />
+            <button type="button" id="toggle-decrypt-pwd-btn" class="icon-toggle-btn" title="Toggle visibility">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="decrypt-remember-session-chk" />
+            <span>Remember passphrase for this browser session</span>
+          </label>
+        </div>
+
+        <p id="decrypt-error-msg" class="error-msg hidden"></p>
+        <div class="modal-actions">
+          <button type="button" id="close-decrypt-modal-btn" class="ghost-btn">Cancel</button>
+          <button type="submit" id="submit-decrypt-btn" class="primary-action-btn">🔓 Decrypt & Save File</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DEVICE MANAGEMENT / TRANSFER MODAL -->
+  <div id="device-modal" class="modal hidden">
+    <div class="modal-card device-card">
+      <div class="modal-header">
+        <h3>💻 Device Vault Binding</h3>
+        <button type="button" id="close-device-x-btn" class="close-x-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <p class="hint">
+        Each FileDrop account is bound to a single authorized device for Friend Vault storage security.
+      </p>
+
+      <div class="device-status-box" id="device-status-box">
+        <div class="device-status-icon-row">
+          <span class="device-large-icon">💻</span>
+          <div class="device-status-details">
+            <h4 id="modal-linked-device-name">Primary Device</h4>
+            <p id="modal-device-status-sub" class="hint">Authorized Storage Vault Device</p>
+          </div>
+          <span id="modal-device-badge" class="device-match-badge match-yes">✓ Active</span>
+        </div>
+      </div>
+
+      <!-- Option 1: Rename Device (If on linked device) -->
+      <form id="rename-device-form" class="profile-form">
+        <div class="form-group">
+          <label for="device-name-input">Edit This Device's Name:</label>
+          <input type="text" id="device-name-input" placeholder="e.g. Work MacBook Pro, Home Desktop" maxlength="40" required />
+        </div>
+        <p id="rename-device-msg" class="profile-msg hidden"></p>
+        <button type="submit" id="save-device-name-btn" class="mini-btn">Save Device Name</button>
+      </form>
+
+      <!-- Option 2: Transfer Device Binding (If on different device or switching) -->
+      <div class="device-transfer-section" id="device-transfer-section">
+        <hr class="modal-divider" />
+        <h4>🔄 Switch / Transfer Vault to This Device</h4>
+        <p class="hint">If you switched computers or phones, transfer your storage vault binding here:</p>
+
+        <form id="transfer-device-form" class="profile-form">
+          <div class="form-group">
+            <label for="transfer-device-name-input">New Device Name:</label>
+            <input type="text" id="transfer-device-name-input" placeholder="e.g. My New Laptop" maxlength="40" required />
+          </div>
+          <div class="form-group" id="transfer-pwd-group">
+            <label for="transfer-password-input">Account Password (to authorize transfer):</label>
+            <input type="password" id="transfer-password-input" placeholder="Enter account password" />
+          </div>
+          <p id="transfer-device-msg" class="profile-msg hidden"></p>
+          <button type="submit" id="confirm-transfer-device-btn" class="danger-btn">Authorize & Transfer Vault</button>
+        </form>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="close-device-modal-btn" class="ghost-btn">Close</button>
+      </div>
+    </div>
   </div>
 
   <!-- PROFILE MODAL -->
@@ -303,6 +705,7 @@
     </div>
   </div>
 
+  <script src="vault-crypto.js"></script>
   <script src="app.js"></script>
 </body>
 

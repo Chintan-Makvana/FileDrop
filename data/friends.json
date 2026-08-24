@@ -1,0 +1,41 @@
+[
+  {
+    "id": "c1f7e6d6-fe8f-44dc-9e40-ef9683b59749",
+    "userA": "3fcc169e-80ba-44f6-afff-521e548b20f3",
+    "userB": "a0a35bcc-8dc2-4afe-a0ef-7a16e88906a6",
+    "initiatedBy": "3fcc169e-80ba-44f6-afff-521e548b20f3",
+    "status": "accepted",
+    "storageQuotaBytes_A": 5368709120,
+    "storageQuotaBytes_B": 10737418240,
+    "autoAccept_A": true,
+    "autoAccept_B": true,
+    "createdAt": "2026-08-24T06:48:32.367Z",
+    "acceptedAt": "2026-08-24T06:48:32.373Z"
+  },
+  {
+    "id": "3e63a405-d0a2-4109-91bf-88c2d54458db",
+    "userA": "b2a172c7-fbf1-4f22-9e8b-5d6bf2ced8ae",
+    "userB": "5c102069-baa0-4829-b1b5-5420d393b28f",
+    "initiatedBy": "b2a172c7-fbf1-4f22-9e8b-5d6bf2ced8ae",
+    "status": "accepted",
+    "storageQuotaBytes_A": 5368709120,
+    "storageQuotaBytes_B": 10737418240,
+    "autoAccept_A": true,
+    "autoAccept_B": true,
+    "createdAt": "2026-08-24T08:01:53.290Z",
+    "acceptedAt": "2026-08-24T08:01:53.301Z"
+  },
+  {
+    "id": "642a9abc-25d3-4dd6-a056-8e4a380485ea",
+    "userA": "816624ab-77f8-49ad-a2fb-2a8255244413",
+    "userB": "8af48d93-afbf-4cdf-80fd-1a3bc4612fc7",
+    "initiatedBy": "816624ab-77f8-49ad-a2fb-2a8255244413",
+    "status": "accepted",
+    "storageQuotaBytes_A": 10737418240,
+    "storageQuotaBytes_B": 5368709120,
+    "autoAccept_A": false,
+    "autoAccept_B": false,
+    "createdAt": "2026-08-24T08:08:25.586Z",
+    "acceptedAt": "2026-08-24T08:08:30.870Z"
+  }
+]

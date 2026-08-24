@@ -77,7 +77,7 @@ function sanitizeUsername(username, fallbackEmail) {
 }
 
 router.post('/register', async (req, res) => {
-  const { email, password, username, avatar } = req.body;
+  const { email, password, username, avatar, deviceId, deviceName } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
@@ -103,6 +103,9 @@ router.post('/register', async (req, res) => {
     return res.status(409).json({ error: 'That username is already taken. Please choose another one.' });
   }
 
+  const assignedDeviceId = deviceId || uuidv4();
+  const assignedDeviceName = (deviceName && deviceName.trim()) || 'Primary Device';
+
   const passwordHash = await bcrypt.hash(password, 10);
   const user = {
     id: uuidv4(),
@@ -111,6 +114,9 @@ router.post('/register', async (req, res) => {
     role: 'user',
     avatar: avatar || null,
     passwordHash,
+    deviceId: assignedDeviceId,
+    deviceName: assignedDeviceName,
+    deviceLinkedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
   };
   users.push(user);
@@ -127,11 +133,14 @@ router.post('/register', async (req, res) => {
     username: user.username,
     role: user.role,
     avatar: user.avatar,
+    deviceId: user.deviceId,
+    deviceName: user.deviceName,
+    isLinkedDevice: true,
   });
 });
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, deviceId, deviceName } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
@@ -157,16 +166,34 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
+  // If user does not have a linked device yet, link this device automatically
+  if (!user.deviceId && deviceId) {
+    user.deviceId = deviceId;
+    user.deviceName = (deviceName && deviceName.trim()) || 'Primary Device';
+    user.deviceLinkedAt = new Date().toISOString();
+    db.saveUsers(users);
+  }
+
   const username = user.username || user.email.split('@')[0];
   const role = user.role || (user.email === 'admin@filedrop.com' ? 'admin' : 'user');
   const avatar = user.avatar || null;
+  const isLinkedDevice = !user.deviceId || (deviceId && user.deviceId === deviceId);
 
   const token = jwt.sign(
     { id: user.id, email: user.email, role, username },
     JWT_SECRET,
     { expiresIn: '30d' }
   );
-  res.json({ token, email: user.email, username, role, avatar });
+  res.json({
+    token,
+    email: user.email,
+    username,
+    role,
+    avatar,
+    deviceId: user.deviceId,
+    deviceName: user.deviceName || 'Primary Device',
+    isLinkedDevice: Boolean(isLinkedDevice),
+  });
 });
 
 // GET Google Auth config (Client ID for frontend)
@@ -176,7 +203,7 @@ router.get('/google/config', (req, res) => {
 
 // POST Google Sign-In / Sign-Up
 router.post('/google', async (req, res) => {
-  const { credential } = req.body;
+  const { credential, deviceId, deviceName } = req.body;
   if (!credential) {
     return res.status(400).json({ error: 'Google credential token is required' });
   }
@@ -200,12 +227,7 @@ router.post('/google', async (req, res) => {
           res.on('data', (chunk) => (raw += chunk));
           res.on('end', () => {
             try {
-              const data = JSON.parse(raw);
-              if (data.error || data.error_description) {
-                reject(new Error(data.error_description || data.error));
-              } else {
-                resolve(data);
-              }
+              resolve(JSON.parse(raw));
             } catch (e) {
               reject(e);
             }
@@ -237,12 +259,15 @@ router.post('/google', async (req, res) => {
         googleId,
         authProvider: 'google',
         passwordHash: null,
+        deviceId: deviceId || uuidv4(),
+        deviceName: (deviceName && deviceName.trim()) || 'Primary Device',
+        deviceLinkedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
       users.push(user);
       db.saveUsers(users);
     } else {
-      // User exists: update googleId and avatar if missing
+      // User exists: update googleId, avatar, or link device if not set
       let changed = false;
       if (!user.googleId) {
         user.googleId = googleId;
@@ -250,6 +275,12 @@ router.post('/google', async (req, res) => {
       }
       if (!user.avatar && avatar) {
         user.avatar = avatar;
+        changed = true;
+      }
+      if (!user.deviceId && deviceId) {
+        user.deviceId = deviceId;
+        user.deviceName = (deviceName && deviceName.trim()) || 'Primary Device';
+        user.deviceLinkedAt = new Date().toISOString();
         changed = true;
       }
       if (changed) {
@@ -260,6 +291,7 @@ router.post('/google', async (req, res) => {
     const username = user.username || user.email.split('@')[0];
     const role = user.role || (user.email === 'admin@filedrop.com' ? 'admin' : 'user');
     const finalAvatar = user.avatar || null;
+    const isLinkedDevice = !user.deviceId || (deviceId && user.deviceId === deviceId);
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role, username },
@@ -273,6 +305,9 @@ router.post('/google', async (req, res) => {
       username,
       role,
       avatar: finalAvatar,
+      deviceId: user.deviceId,
+      deviceName: user.deviceName || 'Primary Device',
+      isLinkedDevice: Boolean(isLinkedDevice),
     });
   } catch (err) {
     console.error('Google Auth Error:', err);
@@ -514,6 +549,86 @@ router.post('/users/:id/reset-password', requireAuth, requireAdmin, async (req, 
   res.json({
     success: true,
     message: `Password for ${users[userIndex].email} was updated successfully.`,
+  });
+});
+
+// ---------- DEVICE BINDING & IDENTIFICATION MANAGEMENT ----------
+
+// Get current device binding status
+router.get('/device-info', requireAuth, (req, res) => {
+  const users = db.getUsers();
+  const user = users.find((u) => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const clientDeviceId = req.headers['x-device-id'] || req.query.deviceId;
+  const isLinkedDevice = Boolean(user.deviceId && clientDeviceId && user.deviceId === clientDeviceId);
+
+  res.json({
+    deviceId: user.deviceId || null,
+    deviceName: user.deviceName || 'Primary Device',
+    deviceLinkedAt: user.deviceLinkedAt || null,
+    isLinkedDevice,
+    clientDeviceId: clientDeviceId || null,
+  });
+});
+
+// Rename linked device
+router.put('/device-name', requireAuth, (req, res) => {
+  const { deviceName } = req.body;
+  if (!deviceName || !deviceName.trim()) {
+    return res.status(400).json({ error: 'Device name cannot be empty' });
+  }
+
+  const users = db.getUsers();
+  const user = users.find((u) => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const clientDeviceId = req.headers['x-device-id'] || req.body.deviceId;
+  if (user.deviceId && clientDeviceId && user.deviceId !== clientDeviceId) {
+    return res.status(403).json({ error: 'Only the authorized linked device can rename this device' });
+  }
+
+  user.deviceName = deviceName.trim();
+  db.saveUsers(users);
+
+  res.json({ success: true, deviceName: user.deviceName });
+});
+
+// Securely Transfer / Re-bind storage vault to this new device
+router.post('/transfer-device', requireAuth, async (req, res) => {
+  const { newDeviceId, newDeviceName, password } = req.body;
+  if (!newDeviceId) {
+    return res.status(400).json({ error: 'Device identifier is required' });
+  }
+
+  const users = db.getUsers();
+  const user = users.find((u) => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  // If user has a password, verify it for security
+  if (user.passwordHash) {
+    if (!password) {
+      return res.status(400).json({ error: 'Please enter your password to authorize transferring the vault to this device.' });
+    }
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'Incorrect password. Device transfer denied.' });
+    }
+  }
+
+  const previousDeviceName = user.deviceName || 'Previous Device';
+  user.deviceId = newDeviceId;
+  user.deviceName = (newDeviceName && newDeviceName.trim()) || 'New Primary Device';
+  user.deviceLinkedAt = new Date().toISOString();
+
+  db.saveUsers(users);
+
+  res.json({
+    success: true,
+    message: `Storage Vault successfully transferred from "${previousDeviceName}" to "${user.deviceName}"!`,
+    deviceId: user.deviceId,
+    deviceName: user.deviceName,
+    isLinkedDevice: true,
   });
 });
 

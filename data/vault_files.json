@@ -1,0 +1,46 @@
+[
+  {
+    "id": "cd92c7de-0589-4610-a23d-84d646555b23",
+    "ownerId": "8af48d93-afbf-4cdf-80fd-1a3bc4612fc7",
+    "hostId": "816624ab-77f8-49ad-a2fb-2a8255244413",
+    "storedBlobName": "vault_e54c8523-03b8-41c1-9eda-7d2d61ed662c.enc",
+    "size": 180057,
+    "encryptedMetaHint": "IMG-20260815-WA0005.jpg",
+    "status": "stored",
+    "uploadedAt": "2026-08-24T08:10:54.023Z",
+    "eviction": null
+  },
+  {
+    "id": "c20b7a97-4724-4cbd-87d0-4d1f1c20b912",
+    "ownerId": "816624ab-77f8-49ad-a2fb-2a8255244413",
+    "hostId": "8af48d93-afbf-4cdf-80fd-1a3bc4612fc7",
+    "storedBlobName": "vault_49bfc52a-8f65-4c1f-8854-6765a51e38f8.enc",
+    "size": 30702,
+    "encryptedMetaHint": "images (1).jpg",
+    "status": "stored",
+    "uploadedAt": "2026-08-24T08:11:18.123Z",
+    "eviction": null
+  },
+  {
+    "id": "ba1341b0-3713-4e60-925a-d7b05c621379",
+    "ownerId": "816624ab-77f8-49ad-a2fb-2a8255244413",
+    "hostId": "8af48d93-afbf-4cdf-80fd-1a3bc4612fc7",
+    "storedBlobName": "vault_6ef49484-baab-46ac-9159-eacbdf714f45.enc",
+    "size": 47130,
+    "encryptedMetaHint": "im.jpg",
+    "status": "stored",
+    "uploadedAt": "2026-08-24T08:11:36.531Z",
+    "eviction": null
+  },
+  {
+    "id": "4d058bf0-95d9-462c-87e9-b35ad5d9ed19",
+    "ownerId": "816624ab-77f8-49ad-a2fb-2a8255244413",
+    "hostId": "8af48d93-afbf-4cdf-80fd-1a3bc4612fc7",
+    "storedBlobName": "vault_bfd2efb9-22f3-458a-8a67-a8fb6b6364af.enc",
+    "size": 47130,
+    "encryptedMetaHint": "im.jpg",
+    "status": "stored",
+    "uploadedAt": "2026-08-24T08:14:50.527Z",
+    "eviction": null
+  }
+]

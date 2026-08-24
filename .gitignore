@@ -1,3 +1,14 @@
 node_modules/
 .env
 filedrop/
+CODE/
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/vault/
+/uploads/vault/*
+!/uploads/vault/.gitkeep
+/*.jpg
+/*.png
+/*.mp4
+!icon.png
+

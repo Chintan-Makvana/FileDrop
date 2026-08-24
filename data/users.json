@@ -6,7 +6,11 @@
     "role": "admin",
     "avatar": "/avatars/avatar_3e683535-8ee2-4bb7-927e-8e450d61c672.png",
     "passwordHash": "$2a$10$hYmwwSn/O8jSasLdLoKBUu4kapAFEYsxgVrI6VuhoJ7BlNvCdAi9i",
-    "createdAt": "2026-08-15T18:09:53.317Z"
+    "createdAt": "2026-08-15T18:09:53.317Z",
+    "deviceId": "dev_a58d16e1-2579-4687-af6f-0d097430c4da",
+    "deviceName": "CHINTAN",
+    "deviceLinkedAt": "2026-08-24T08:04:56.501Z",
+    "friendCode": "FD-5A3D44"
   },
   {
     "id": "816624ab-77f8-49ad-a2fb-2a8255244413",
@@ -16,15 +20,23 @@
     "avatar": "/avatars/avatar_83610a04-b9fb-4a8b-8022-d83fafeb7402.jpg",
     "passwordHash": "$2a$10$nbUID8J/XNFgcya5AZVkOesK4f.khekKJpLzA.1vJ.LqTD8yI.9TW",
     "createdAt": "2026-08-14T11:36:52.318Z",
-    "googleId": "106016899908556204046"
+    "googleId": "106016899908556204046",
+    "friendCode": "FD-816624",
+    "deviceId": "dev_a58d16e1-2579-4687-af6f-0d097430c4da",
+    "deviceName": "CHINTAN",
+    "deviceLinkedAt": "2026-08-24T08:02:51.521Z"
   },
   {
-    "id": "9524199a-7686-4ce1-9194-483305b594c3",
+    "id": "8af48d93-afbf-4cdf-80fd-1a3bc4612fc7",
     "email": "makvanacb2310@gmail.com",
     "username": "Makvana",
     "role": "user",
     "avatar": null,
-    "passwordHash": "$2a$10$J2fx188PxJ6bqRlARxUEPeIIM3pX0ex4X7cZlfyLhbcXtSLBtbUZK",
-    "createdAt": "2026-08-16T09:13:40.411Z"
+    "passwordHash": "$2a$10$VHXYfbcisRC8BUMHRoYheOZumM4EqBXfpCOUeEB/76nZqBGR3nax6",
+    "deviceId": "dev_dcc5e529-0e81-4e61-9425-b524f64f65f8",
+    "deviceName": "Chintan",
+    "deviceLinkedAt": "2026-08-24T08:07:42.641Z",
+    "createdAt": "2026-08-24T08:07:42.641Z",
+    "friendCode": "FD-8AF48D"
   }
 ]
