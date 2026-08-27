@@ -1,11 +1,11 @@
 # FileDrop
 
-A simple, self-hosted file storage website:
-- Sign up / log in with email + password
-- Drag & drop (or click to browse) to upload files
-- Download your files any time
-- Generate a shareable link for any file (anyone with the link can download it, no login needed)
-- Revoke a share link whenever you want
+A modern, self-hosted file storage & sharing web application:
+- **Sign up & Login**: Secure email + password authentication and Google Sign-In.
+- **Drag & Drop Upload**: Upload any file seamlessly with fast progress feedback.
+- **Manage Files**: Search, filter, preview, download, and delete stored files.
+- **Shareable Links**: Generate public download links with optional auto-destruct (burn-on-download).
+- **Profile & Device Security**: Customizable user avatars and sleek responsive design across all devices.
 
 Files are stored as plain files on disk (in `/uploads`), and accounts/file metadata are stored
 in small JSON files (in `/data`) — no external database required. This keeps setup simple and

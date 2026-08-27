@@ -28,6 +28,8 @@ router.post('/upload', requireAuth, upload.array('files', 20), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'No files received' });
   }
+
+  const burnAfterDownload = req.body.burnAfterDownload === 'true' || req.body.burnAfterDownload === true;
   const files = db.getFiles();
   const uploaded = req.files.map((f) => {
     const record = {
@@ -37,6 +39,7 @@ router.post('/upload', requireAuth, upload.array('files', 20), (req, res) => {
       storedName: f.filename,
       size: f.size,
       mimetype: f.mimetype,
+      burnAfterDownload: Boolean(burnAfterDownload),
       uploadedAt: new Date().toISOString(),
       shareToken: null,
     };
@@ -92,7 +95,7 @@ router.get('/', requireAuth, (req, res) => {
     });
   }
 
-  // Regular user: ultra-fast isolated lookup
+  // Regular user: isolated lookup
   filteredFiles = allFiles
     .filter((f) => f.ownerId === req.user.id)
     .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
@@ -100,13 +103,62 @@ router.get('/', requireAuth, (req, res) => {
   res.json({ files: filteredFiles, isAdmin: false });
 });
 
-// Download a file (owner or admin)
+// Download a file (owner or admin) — supports auto-wipe on download
 router.get('/:id/download', requireAuth, (req, res) => {
-  const file = db
-    .getFiles()
-    .find((f) => f.id === req.params.id && (req.user.role === 'admin' || f.ownerId === req.user.id));
+  const files = db.getFiles();
+  const file = files.find(
+    (f) => f.id === req.params.id && (req.user.role === 'admin' || f.ownerId === req.user.id)
+  );
   if (!file) return res.status(404).json({ error: 'File not found' });
-  res.download(path.join(UPLOAD_DIR, file.storedName), file.originalName);
+
+  const shouldBurn = file.burnAfterDownload || req.query.burn === '1' || req.query.wipe === '1';
+  const filePath = path.join(UPLOAD_DIR, file.storedName);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'File data is no longer on disk' });
+  }
+
+  res.download(filePath, file.originalName, (err) => {
+    if (!err && shouldBurn) {
+      // Auto-delete / burn from platform
+      try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch (e) {}
+
+      const updated = db.getFiles().filter((f) => f.id !== file.id);
+      db.saveFiles(updated);
+
+      const wsManager = req.app.get('wsManager');
+      if (wsManager) {
+        wsManager.sendToUser(req.user.id, {
+          type: 'file_burned_notice',
+          fileId: file.id,
+          fileName: file.originalName,
+          message: `File "${file.originalName}" was saved to your device and removed from the platform.`,
+        });
+      }
+    }
+  });
+});
+
+// Toggle Burn-After-Download status
+router.post('/:id/toggle-burn', requireAuth, (req, res) => {
+  const files = db.getFiles();
+  const file = files.find(
+    (f) => f.id === req.params.id && (req.user.role === 'admin' || f.ownerId === req.user.id)
+  );
+  if (!file) return res.status(404).json({ error: 'File not found' });
+
+  file.burnAfterDownload = !file.burnAfterDownload;
+  db.saveFiles(files);
+
+  res.json({
+    success: true,
+    burnAfterDownload: file.burnAfterDownload,
+    message: file.burnAfterDownload
+      ? 'Self-Destruct enabled: File will be wiped from platform immediately upon download.'
+      : 'Self-Destruct disabled: File will remain in storage after download.',
+  });
 });
 
 // Delete a file (owner or admin)
@@ -131,8 +183,15 @@ router.post('/:id/share', requireAuth, (req, res) => {
   if (!file) return res.status(404).json({ error: 'File not found' });
 
   if (!file.shareToken) file.shareToken = uuidv4();
+  if (req.body && req.body.burnAfterDownload !== undefined) {
+    file.burnAfterDownload = Boolean(req.body.burnAfterDownload);
+  }
   db.saveFiles(files);
-  res.json({ shareToken: file.shareToken, path: `/s/${file.shareToken}` });
+  res.json({
+    shareToken: file.shareToken,
+    path: `/s/${file.shareToken}`,
+    burnAfterDownload: Boolean(file.burnAfterDownload),
+  });
 });
 
 // Revoke a share link (owner or admin)

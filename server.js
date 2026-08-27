@@ -7,16 +7,13 @@ const db = require('./db');
 
 const authRoutes = require('./routes/auth');
 const fileRoutes = require('./routes/files');
-const vaultRoutes = require('./routes/vault');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const AVATAR_DIR = path.join(__dirname, 'uploads', 'avatars');
-const VAULT_DIR = path.join(__dirname, 'uploads', 'vault');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 if (!fs.existsSync(AVATAR_DIR)) fs.mkdirSync(AVATAR_DIR, { recursive: true });
-if (!fs.existsSync(VAULT_DIR)) fs.mkdirSync(VAULT_DIR, { recursive: true });
 
 app.use(cors());
 app.use(express.json());
@@ -25,7 +22,6 @@ app.use('/avatars', express.static(AVATAR_DIR));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/files', fileRoutes);
-app.use('/api/vault', vaultRoutes);
 
 // Public share link — no login required, works for anyone with the link
 app.get('/s/:token', (req, res) => {

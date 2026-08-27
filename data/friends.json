@@ -26,16 +26,14 @@
     "acceptedAt": "2026-08-24T08:01:53.301Z"
   },
   {
-    "id": "642a9abc-25d3-4dd6-a056-8e4a380485ea",
+    "id": "bd426332-8c9a-47f9-8f13-0b92382db6c7",
     "userA": "816624ab-77f8-49ad-a2fb-2a8255244413",
     "userB": "8af48d93-afbf-4cdf-80fd-1a3bc4612fc7",
     "initiatedBy": "816624ab-77f8-49ad-a2fb-2a8255244413",
     "status": "accepted",
-    "storageQuotaBytes_A": 10737418240,
-    "storageQuotaBytes_B": 5368709120,
-    "autoAccept_A": false,
-    "autoAccept_B": false,
-    "createdAt": "2026-08-24T08:08:25.586Z",
-    "acceptedAt": "2026-08-24T08:08:30.870Z"
+    "createdAt": "2026-08-24T14:38:28.268Z",
+    "acceptedAt": "2026-08-24T14:39:30.245Z",
+    "storageQuotaBytes_B": 536870912,
+    "storageQuotaBytes_A": 1073741824
   }
 ]
